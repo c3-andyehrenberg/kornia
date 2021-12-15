@@ -827,6 +827,7 @@ class RandomRotation(GeometricAugmentationBase2D):
         align_corners: bool = True,
         p: float = 0.5,
         keepdim: bool = False,
+        padding_mode: Union[str, int, SamplePadding] = SamplePadding.ZEROS.name,
     ) -> None:
         super().__init__(p=p,
                          return_transform=return_transform,
@@ -839,6 +840,7 @@ class RandomRotation(GeometricAugmentationBase2D):
             resample=Resample.get(resample),
             align_corners=align_corners,
         )
+        self.padding_mode: SamplePadding = SamplePadding.get(padding_mode)
 
     def compute_transformation(self, input: torch.Tensor, params: Dict[str, torch.Tensor]) -> torch.Tensor:
         # TODO: Update to use `get_rotation_matrix2d`
@@ -858,8 +860,9 @@ class RandomRotation(GeometricAugmentationBase2D):
         self, input: torch.Tensor, params: Dict[str, torch.Tensor], transform: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         transform = cast(torch.Tensor, transform)
+        padding_mode: str = SamplePadding(self.padding_mode).name.lower()
         return affine(
-            input, transform[..., :2, :3], self.flags["resample"].name.lower(), "zeros", self.flags["align_corners"])
+            input, transform[..., :2, :3], self.flags["resample"].name.lower(), "zeros", padding_mode, self.flags["align_corners"])
 
     def inverse_transform(
         self,
